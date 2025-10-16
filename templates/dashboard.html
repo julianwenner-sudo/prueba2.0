@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Gestión de Ofertas{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-bg-primary h-100">
+            <div class="card-body">
+                <h5 class="card-title">Ofertas</h5>
+                <p class="card-text display-6">{{ totals.count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-success h-100">
+            <div class="card-body">
+                <h5 class="card-title">Valor total</h5>
+                <p class="card-text display-6">{{ totals.value|currency }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-secondary h-100">
+            <div class="card-body">
+                <h5 class="card-title">Costo total</h5>
+                <p class="card-text display-6">{{ totals.cost|currency }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-warning h-100">
+            <div class="card-body">
+                <h5 class="card-title">Margen total</h5>
+                <p class="card-text display-6">{{ totals.margin|currency }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">Filtros</div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-12">
+                        <label for="client_id" class="form-label">Cliente</label>
+                        <select class="form-select" id="client_id" name="client_id">
+                            <option value="">Todos</option>
+                            {% for client in clients %}
+                                <option value="{{ client.id }}" {% if request.args.get('client_id') == client.id|string %}selected{% endif %}>{{ client.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Estado</label>
+                        {% for status in statuses %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="{{ status }}" name="status" id="status-{{ status }}"
+                                   {% if status in request.args.getlist('status') %}checked{% endif %}>
+                            <label class="form-check-label" for="status-{{ status }}">{{ status|capitalize }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-6">
+                        <label for="created_from" class="form-label">Creada desde</label>
+                        <input type="date" class="form-control" id="created_from" name="created_from" value="{{ request.args.get('created_from', '') }}">
+                    </div>
+                    <div class="col-6">
+                        <label for="created_to" class="form-label">Creada hasta</label>
+                        <input type="date" class="form-control" id="created_to" name="created_to" value="{{ request.args.get('created_to', '') }}">
+                    </div>
+                    <div class="col-6">
+                        <label for="valid_from" class="form-label">Vigente desde</label>
+                        <input type="date" class="form-control" id="valid_from" name="valid_from" value="{{ request.args.get('valid_from', '') }}">
+                    </div>
+                    <div class="col-6">
+                        <label for="valid_to" class="form-label">Vigente hasta</label>
+                        <input type="date" class="form-control" id="valid_to" name="valid_to" value="{{ request.args.get('valid_to', '') }}">
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Aplicar filtros</button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Limpiar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-header">Preferencias del dashboard</div>
+            <div class="card-body">
+                <form method="post">
+                    <p class="small text-muted">Selecciona las columnas que deseas ver en la tabla.</p>
+                    {% for column, label in {
+                        'offer_number': 'Número de oferta',
+                        'client': 'Cliente',
+                        'price': 'Precio',
+                        'cost': 'Costo',
+                        'margin': 'Margen',
+                        'created_at': 'Fecha de creación',
+                        'valid_until': 'Vigencia',
+                        'status': 'Estado'
+                    }.items() %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="columns" value="{{ column }}" id="column-{{ column }}"
+                               {% if column in selected_columns %}checked{% endif %}>
+                        <label class="form-check-label" for="column-{{ column }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-success">Guardar preferencias</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-header">Estado de las ofertas</div>
+            <ul class="list-group list-group-flush">
+                {% for status in statuses %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ status|capitalize }}
+                        <span class="badge bg-primary rounded-pill">{{ status_summary[status] }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">Ofertas</div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            {% if 'offer_number' in selected_columns %}<th>Número</th>{% endif %}
+                            {% if 'client' in selected_columns %}<th>Cliente</th>{% endif %}
+                            {% if 'price' in selected_columns %}<th>Precio</th>{% endif %}
+                            {% if 'cost' in selected_columns %}<th>Costo</th>{% endif %}
+                            {% if 'margin' in selected_columns %}<th>Margen</th>{% endif %}
+                            {% if 'created_at' in selected_columns %}<th>Creada</th>{% endif %}
+                            {% if 'valid_until' in selected_columns %}<th>Vigente hasta</th>{% endif %}
+                            {% if 'status' in selected_columns %}<th>Estado</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if offers %}
+                            {% for offer in offers %}
+                            <tr>
+                                {% if 'offer_number' in selected_columns %}<td>{{ offer.offer_number }}</td>{% endif %}
+                                {% if 'client' in selected_columns %}<td>{{ offer.client.name }}</td>{% endif %}
+                                {% if 'price' in selected_columns %}<td>{{ offer.price|currency }}</td>{% endif %}
+                                {% if 'cost' in selected_columns %}<td>{{ offer.cost|currency }}</td>{% endif %}
+                                {% if 'margin' in selected_columns %}<td>{{ offer.margin|currency }}</td>{% endif %}
+                                {% if 'created_at' in selected_columns %}<td>{{ offer.created_at|date_format }}</td>{% endif %}
+                                {% if 'valid_until' in selected_columns %}<td>{{ offer.valid_until|date_format }}</td>{% endif %}
+                                {% if 'status' in selected_columns %}<td>{{ offer.status|capitalize }}</td>{% endif %}
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4">No se encontraron ofertas con los filtros seleccionados.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
