@@ -1,27 +1,39 @@
-# Gestión de ofertas
+# Gestión de ofertas (TypeScript + Next.js)
 
-Aplicación web sencilla desarrollada con Flask para registrar ofertas comerciales, administrar clientes y visualizar un dashboard configurable.
+Aplicación web ligera para registrar clientes y ofertas comerciales totalmente construida con Next.js 14 y React en TypeScript. Pensada para desplegarse fácilmente en Vercel aprovechando el almacenamiento local del navegador.
+
+## Características
+
+- **Dashboard** con tarjetas de métricas, filtros por cliente, estado y fechas, y selección de columnas visibles.
+- **Gestión de clientes** para registrar y listar clientes con persistencia en `localStorage`.
+- **Registro de ofertas** con cálculo automático de margen y opción de crear clientes al vuelo.
+- **Interfaz en español** basada en componentes de Bootstrap 5.
+
+> Nota: Los datos se almacenan únicamente en el navegador mediante `localStorage` para simplificar el despliegue serverless. Cada navegador/usuario tendrá su propio conjunto de datos.
 
 ## Requisitos
 
-- Python 3.10+
-- Entorno virtual recomendado
+- Node.js 18.17+ (recomendado Node 20)
+- npm, pnpm o yarn
 
-## Instalación y ejecución
+## Puesta en marcha
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # En Windows usa .venv\\Scripts\\activate
-pip install -r requirements.txt
-flask --app app run --debug
+npm install
+npm run dev
 ```
 
-La primera vez que se ejecute la aplicación se creará automáticamente un archivo SQLite `offers.db` en la raíz del proyecto.
+La aplicación quedará disponible en [http://localhost:3000](http://localhost:3000).
 
-## Funcionalidades
+### Scripts disponibles
 
-- **Dashboard personalizable** con tarjetas de resumen, filtros por estado, cliente y rango de fechas.
-- **Gestión de clientes** para registrar nuevos clientes y ver los existentes.
-- **Registro de ofertas** con selección de cliente existente o creación rápida de uno nuevo. Calcula el margen (precio - costo) automáticamente.
+- `npm run dev`: inicia el servidor de desarrollo.
+- `npm run build`: genera la versión optimizada para producción.
+- `npm run start`: ejecuta la versión de producción.
+- `npm run lint`: ejecuta las reglas de ESLint incluidas en Next.js.
 
-Las preferencias del dashboard (columnas visibles) se almacenan en la sesión del navegador, permitiendo ajustar la vista según las métricas relevantes para cada usuario.
+## Despliegue en Vercel
+
+1. Crea un nuevo proyecto en Vercel e importa este repositorio.
+2. Selecciona **Next.js** como framework y utiliza los valores por defecto.
+3. Tras el despliegue, los datos se guardarán por navegador gracias al uso de `localStorage` del lado del cliente.
